@@ -24,10 +24,9 @@ BuildRequires: procps
 BuildRequires: coreutils perl
 BuildRequires: courier-authlib-devel >= 0.60.6.20080629
 BuildRequires: libidn-devel
-BuildRequires: courier-unicode-devel >= 2.1
+BuildRequires: courier-unicode-devel
 BuildRequires: gdbm-devel
 
-BuildRequires:      openssl
 BuildRequires:      openssl-devel
 
 BuildRequires: perl-generators
