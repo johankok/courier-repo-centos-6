@@ -53,7 +53,6 @@ unicode library.
 %{_libdir}/*.so
 %{_libdir}/*.la
 %{_libdir}/*.a
-%{_datadir}/aclocal/*.m4
 
 %changelog
 * Sun Jan 12 2014 Sam Varshavchik <mrsam@octopus.email-scan.com> - 1.0
