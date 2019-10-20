@@ -1,7 +1,7 @@
 Summary: Courier Unicode Library
 Name: courier-unicode
 Version: 1.4
-Release: 1%{?dist}
+Release: 2%{?dist}
 License: GPLv3
 URL: http://www.courier-mta.org/unicode/
 Source: https://downloads.sourceforge.net/courier/%{name}-%{version}.tar.bz2
@@ -40,7 +40,6 @@ unicode library.
 
 %post -p /sbin/ldconfig
 %postun -p /sbin/ldconfig
-
 
 %files
 %defattr(-,root,root,-)

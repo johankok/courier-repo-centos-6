@@ -6,7 +6,7 @@
 
 Name:           courier-authlib
 Version:        0.66.3
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Courier authentication library
 
 License:        GPLv3
