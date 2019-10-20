@@ -5,20 +5,14 @@
 #  Need to version-upgrade RH builds due to different directory locations.
 #
 
-%define using_systemd %(test -d /etc/systemd && echo 1 || echo 0)
-
 Summary: Courier IMAP server
 Name: courier-imap
 Version: 4.16.2 
 Release: 1%{?dist}
 License: GPLv3
 Source: https://downloads.sourceforge.net/courier/%{name}-%{version}.tar.bz2
+
 Requires: coreutils sed
-%if %using_systemd
-Requires(post):   systemd
-Requires(postun):   systemd
-Requires(preun):  systemd
-%endif
 Requires: courier-authlib >= 0.60.6.20080629
 BuildRequires: procps
 BuildRequires: coreutils perl
@@ -74,18 +68,8 @@ PATH=/usr/bin:$PATH %configure \
 %{__mkdir_p} $RPM_BUILD_ROOT%{initdir}
 %{__make} install DESTDIR=$RPM_BUILD_ROOT
 
-%if %using_systemd
-%{__mkdir_p} $RPM_BUILD_ROOT%{_datadir}
-%{__mkdir_p} $RPM_BUILD_ROOT/lib/systemd/system
-%endif
-
 # Copy standard sysvinit file
-%if %using_systemd
-install -Dm 755 packaging/systemd/courier-imap.sysvinit $RPM_BUILD_ROOT/%{_datadir}
-install -Dm 644 packaging/systemd/courier-imap.service $RPM_BUILD_ROOT/lib/systemd/system
-%else
 install -Dm 744 packaging/systemd/courier-imap.sysvinit $RPM_BUILD_ROOT/%{initdir}/courier-imap
-%endif
 
 cat >$RPM_BUILD_ROOT/%{_datadir}/dhparams.pem.dist <<ZZ
 This file contains default DH parameters for initial use on a new
@@ -218,33 +202,11 @@ touch $RPM_BUILD_ROOT%{_localstatedir}/pop3d.pid.lock
 touch $RPM_BUILD_ROOT%{_localstatedir}/pop3d-ssl.pid.lock
 
 %post
-%if %using_systemd
-if test -f %{initdir}/courier-imap
-then
-# Update to systemd
-
-  /sbin/chkconfig --del courier-imap || :
-  /bin/systemctl stop courier-imap.service || :
-fi
-%{_datadir}/sysconftool `%{__cat} %{_datadir}/configlist` >/dev/null
-%systemd_post courier-imap.service
-if [ $1 -eq 1 ]
-then
-    /bin/systemctl daemon-reload >/dev/null 2>&1 || :
-fi
-%else
 /sbin/chkconfig --del courier-imap
 /sbin/chkconfig --add courier-imap
 %{_datadir}/sysconftool `%{__cat} %{_datadir}/configlist` >/dev/null
-%endif
+
 %preun
-%if %using_systemd
-if test "$1" = "0"
-then
-  rm -f %{_localstatedir}/couriersslcache
-fi
-%systemd_preun courier-imap.service
-%else
 if test "$1" = "0"
 then
   rm -f %{_localstatedir}/couriersslcache
@@ -255,11 +217,6 @@ fi
 %{_libexecdir}/imapd-ssl.rc stop
 %{_libexecdir}/pop3d.rc stop
 %{_libexecdir}/pop3d-ssl.rc stop
-%endif
-%postun
-%if %using_systemd
-%systemd_postun_with_restart courier-imap.service
-%endif
 
 %files
 %defattr(-, bin, bin)
@@ -269,12 +226,7 @@ fi
 
 %attr(755, bin, bin) %config /etc/profile.d/courier-imap.csh
 %attr(755, bin, bin) %config /etc/profile.d/courier-imap.sh
-%if %using_systemd
-%attr(-, root, root) /lib/systemd/system/*
-%{_datadir}/courier-imap.sysvinit
-%else
 %attr(755, bin, bin) %{initdir}/courier-imap
-%endif
 %dir %{_prefix}
 
 %if "%{_prefix}" != "%{_exec_prefix}"
