@@ -2,8 +2,6 @@
 # Copyright 1998 - 2017 Double Precision, Inc.  See COPYING for
 # distribution information.
 
-%define using_systemd %(test -d /etc/systemd && echo 1 || echo 0)
-
 ################################################################################
 
 Name:           courier-authlib
@@ -13,12 +11,7 @@ Summary:        Courier authentication library
 
 License:        GPLv3
 URL:            http://www.courier-mta.org
-
-################################################################################
-
 Source:         https://downloads.sourceforge.net/courier/%{name}-%{version}.tar.bz2
-
-################################################################################
 
 BuildRequires:      libtool
 BuildRequires:      openldap-devel
@@ -33,14 +26,8 @@ BuildRequires:      procps
 
 BuildRequires:      %{_includedir}/ltdl.h
 
-%if %using_systemd
-Requires(post):     systemd
-Requires(preun):    systemd
-Requires(postun):    systemd
-%else
 Requires(post):     /sbin/chkconfig
 Requires(preun):    /sbin/chkconfig
-%endif
 
 BuildRequires: perl-generators
 
@@ -234,67 +221,26 @@ do
 		;;
 	esac
 done
-%if %using_systemd
-%{__mkdir_p} $RPM_BUILD_ROOT%{_datadir}
-%{__install} -m 555 courier-authlib.sysvinit $RPM_BUILD_ROOT%{_datadir}
-
-%{__mkdir_p} $RPM_BUILD_ROOT/lib/systemd/system
-%{__install} -m 644 courier-authlib.service $RPM_BUILD_ROOT/lib/systemd/system
-%else
 %{__mkdir_p} $RPM_BUILD_ROOT%{_sysconfdir}/rc.d/init.d
 %{__install} -m 555 courier-authlib.sysvinit \
         $RPM_BUILD_ROOT%{_sysconfdir}/rc.d/init.d/courier-authlib
-%endif
 
 %post
 %{_libexecdir}/courier-authlib/sysconftool %{_sysconfdir}/authlib/*.dist >/dev/null
-%if %using_systemd
-if test -f /etc/init.d/courier-authlib
-then
-# Upgrade to systemd
-
-        /sbin/chkconfig --del courier-authlib
-        /bin/systemctl stop courier-authlib.service || :
-fi
-%systemd_post courier-authlib.service
-if [ $1 -eq 1 ]
-then
-    /bin/systemctl daemon-reload >/dev/null 2>&1 || :
-fi
-%else
 /sbin/chkconfig --del courier-authlib
 /sbin/chkconfig --add courier-authlib
-%endif
+
 %preun
 if test "$1" = "0"
 then
-%if %using_systemd
-%systemd_preun courier-authlib.service
-%else
         /sbin/chkconfig --del courier-authlib
-%endif
 fi
-
-%postun
-%if %using_systemd
-if [ $1 -eq 0 ]
-then
-    /bin/systemctl daemon-reload
-fi
-%systemd_postun_with_restart courier-authlib.service
-%endif
-
 
 %files -f configfiles.base
 %defattr(-,root,root,-)
 %doc README README*html README.authmysql.myownquery README.ldap
 %doc NEWS COPYING* AUTHORS ChangeLog
-%if %using_systemd
-/lib/systemd/system/*
-%attr(755, bin, bin) %{_datadir}/courier-authlib.sysvinit
-%else
 /etc/rc.d/init.d/*
-%endif
 %ghost %attr(600, root, root) %{_localstatedir}/spool/authdaemon/pid.lock
 %ghost %attr(644, root, root) %{_localstatedir}/spool/authdaemon/pid
 %ghost %attr(-, root, root) %{_localstatedir}/spool/authdaemon/socket
